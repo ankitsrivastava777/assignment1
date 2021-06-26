@@ -1,15 +1,16 @@
 var express = require("express");
 var app = express();
 const bcrypt = require("bcrypt");
-const { emailAuth, usernameAuth } = require("../config/validation");
-var { User } = require("../models/User");
+var { User, usersprofile_schema } = require("../models/User");
 const jwt = require("jsonwebtoken");
+const { emailAuth, usernameAuth } = require("../config/validation");
 
 function generateAccessToken(userId) {
   return jwt.sign(userId, process.env.TOKEN_SECRET);
 }
 
-app.post("/register", emailAuth, usernameAuth, async (req, res) => {
+app.post("/register", async (req, res) => {
+  var valid = new Date(req.body.dob).getTime() > 0;
   const salt = await bcrypt.genSalt();
   const userPassword = await bcrypt.hash(req.body.password, salt);
   if (req.body.password !== req.body.confirmpassword) {
@@ -19,27 +20,36 @@ app.post("/register", emailAuth, usernameAuth, async (req, res) => {
       data: null,
     });
   } else {
-    const userData = new User({
-      username: req.body.username,
-      dob: req.body.dob,
-      password: userPassword,
-      email: req.body.email,
-    });
-    userData.save(function (err, row) {
-      if (err) {
-        res.status(500).json({
-          error: 1,
-          message: err.message,
-          data: null,
-        });
-      } else {
-        res.status(200).json({
-          error: 0,
-          message: "user saved successfully",
-          data: null,
-        });
-      }
-    });
+    if (valid == true) {
+      const userData = new User({
+        username: req.body.username,
+        dob: req.body.dob,
+        password: userPassword,
+        email: req.body.email,
+      });
+
+      userData.save(function (err, row) {
+        if (err) {
+          res.status(500).json({
+            error: 1,
+            message: err.message,
+            data: null,
+          });
+        } else {
+          res.status(200).json({
+            error: 0,
+            message: "user saved successfully",
+            data: null,
+          });
+        }
+      });
+    } else {
+      res.status(500).json({
+        error: 1,
+        message: "date format should be in mm-dd-yyyy",
+        data: null,
+      });
+    }
   }
 });
 
