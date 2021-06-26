@@ -1,7 +1,7 @@
 var express = require("express");
 var app = express();
 const bcrypt = require("bcrypt");
-var { auth, jwtAuth } = require("../config/auth");
+const { emailAuth, usernameAuth } = require("../config/validation");
 var { User } = require("../models/User");
 const jwt = require("jsonwebtoken");
 
@@ -9,7 +9,7 @@ function generateAccessToken(userId) {
   return jwt.sign(userId, process.env.TOKEN_SECRET);
 }
 
-app.post("/register", async (req, res) => {
+app.post("/register", emailAuth, usernameAuth, async (req, res) => {
   const salt = await bcrypt.genSalt();
   const userPassword = await bcrypt.hash(req.body.password, salt);
   if (req.body.password !== req.body.confirmpassword) {
@@ -21,7 +21,7 @@ app.post("/register", async (req, res) => {
   } else {
     const userData = new User({
       username: req.body.username,
-      dob: req.body.dob.toString(),
+      dob: req.body.dob,
       password: userPassword,
       email: req.body.email,
     });
@@ -44,14 +44,14 @@ app.post("/register", async (req, res) => {
 });
 
 app.post("/login", async function (req, res) {
+  username = req.body.username;
   User.findOne(
-    { username: req.body.username },
+    { username: { $regex: new RegExp("^" + username + "$", "i") } },
     async function (err, userDetails) {
       var pass = userDetails.password;
       var userId = userDetails._id;
       var input_password = pass;
       var user_password = req.body.password;
-      console.log(JSON.stringify(pass));
       if (await bcrypt.compare(user_password, input_password)) {
         const token = generateAccessToken({ userId: userId });
         res.status(200).json({
@@ -61,8 +61,8 @@ app.post("/login", async function (req, res) {
         });
       } else {
         res.status(200).json({
-          error: 1,
-          message: "password not match",
+          error: 0,
+          message: "Incorrect Password",
           data: null,
         });
       }

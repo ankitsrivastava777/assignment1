@@ -8,7 +8,7 @@ var usersprofile_schema = mongoose.Schema(
             required: true,
         },
         dob: {
-            type: String,
+            type: Date,
         },
         email: {
             type: String,
