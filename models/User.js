@@ -29,22 +29,20 @@ var usersprofile_schema = mongoose.Schema(
   }
 );
 
-usersprofile_schema.pre("save", function(next) {
-	console.log(this.email);
-	console.log(this.username);
+usersprofile_schema.pre("save",async function(next) {
 	var usr = this.username;
 	var email = this.email;
-	User.findOne({
+await	User.findOne({
 		email: this.email
-	}, async function(err, userDetails) {
+	}, function(err, userDetails) {
 		if (userDetails && userDetails._id) {
 			const err = new Error("Email is already saved");
 			next(err);
 		}
 	});
-	User.findOne({
-		username: usr
-	}, async function(err, userDetails) {
+await	User.findOne({
+		username: this.username
+	}, function(err, userDetails) {
 		console.log(userDetails);
 		if (userDetails && userDetails._id) {
 			const err = new Error("Username is already saved");
