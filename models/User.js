@@ -29,27 +29,26 @@ var usersprofile_schema = mongoose.Schema(
   }
 );
 
-usersprofile_schema.pre("save",async function(next) {
-	var usr = this.username;
-	var email = this.email;
-await	User.findOne({
-		email: this.email
-	}, function(err, userDetails) {
-		if (userDetails && userDetails._id) {
-			const err = new Error("Email is already saved");
-			next(err);
-		}
-	});
-await	User.findOne({
-		username: this.username
-	}, function(err, userDetails) {
-		console.log(userDetails);
-		if (userDetails && userDetails._id) {
-			const err = new Error("Username is already saved");
-			next(err);
-		}
-		next();
-	});
+usersprofile_schema.pre("save", async function(next) {
+  try {
+      const userEmail = await User.findOne({
+          email: this.email
+      }).exec();
+      if (userEmail) {
+          const err = new Error("Email is already saved");
+          next(err);
+      } else {
+          const userName = await User.findOne({
+              username: this.username
+          }).exec();
+          if (userName) {
+              const err = new Error("Username is already saved");
+              next(err);
+          }
+      }
+  } catch (err) {
+      next();
+  }
 });
 
 var User = conn.model("newuserdata", usersprofile_schema);
